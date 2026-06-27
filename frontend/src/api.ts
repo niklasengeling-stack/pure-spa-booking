@@ -6,6 +6,7 @@ import type {
   BookingFilter,
   BookingRequest,
   BookingResult,
+  CheckoutResult,
   Extra,
 } from '../../shared/types';
 
@@ -49,6 +50,16 @@ export const api = {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(req),
+      })
+    ).json();
+  },
+
+  async checkout(req: BookingRequest): Promise<CheckoutResult> {
+    return (
+      await fetch(`${BASE}/checkout`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ booking: req }),
       })
     ).json();
   },

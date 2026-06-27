@@ -1,5 +1,5 @@
 import { type FormEvent, useEffect, useMemo, useRef, useState } from 'react';
-import type { Location, Suite, DayAvailability, Slot, BookingFilter, Extra, BookingResult } from '../../shared/types';
+import type { Location, Suite, DayAvailability, Slot, BookingFilter, Extra, CheckoutResult } from '../../shared/types';
 import { api } from './api';
 
 const WEEKDAYS = ['M', 'D', 'M', 'D', 'F', 'S', 'S'];
@@ -105,7 +105,7 @@ export default function App() {
 
   const [customer, setCustomer] = useState({ firstName: '', lastName: '', email: '', phone: '', notes: '' });
   const [submitting, setSubmitting] = useState(false);
-  const [bookingResult, setBookingResult] = useState<BookingResult | null>(null);
+  const [bookingResult, setBookingResult] = useState<CheckoutResult | null>(null);
 
   const visibleMonths = useMemo(
     () => [0, 1, 2].map((offset) => addMonths(baseYear, baseMonth, offset)),
@@ -164,7 +164,7 @@ export default function App() {
     const selectedExtras = Object.entries(extraSelections)
       .filter(([, qty]) => qty > 0)
       .map(([extraId, quantity]) => ({ extraId, quantity }));
-    const result = await api.createBooking({
+    const result = await api.checkout({
       slotId: selectedSlot.id,
       filter,
       customer,
@@ -284,7 +284,7 @@ export default function App() {
             <FilterDropdown
               label="Gäste"
               value={String(filter.guests)}
-              options={[1, 2, 3, 4].map((n) => ({ value: String(n), label: n === 1 ? '1 Person' : `${n} Personen` }))}
+              options={[2, 3, 4].map((n) => ({ value: String(n), label: `${n} Personen` }))}
               onChange={(v) => setFilter((f) => ({ ...f, guests: Number(v) }))}
             />
             <FilterDropdown

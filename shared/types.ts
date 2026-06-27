@@ -90,3 +90,25 @@ export interface BookingResult {
   bookingId?: string;   // TAC-Reservierungsnummer
   message?: string;     // Fehler-/Hinweistext im Klartext für den Gast
 }
+
+/** Checkout-Anfrage: Buchungsdetails → Bezahlvorgang starten. */
+export interface CheckoutRequest {
+  booking: BookingRequest;
+}
+
+/** Ergebnis des Checkout-Starts. */
+export interface CheckoutResult {
+  status: 'pending' | 'confirmed' | 'failed';
+  paymentId?: string;     // interne Zahlungs-ID
+  bookingId?: string;     // TAC-Reservierungsnummer (bei onsite direkt gesetzt)
+  checkoutUrl?: string;   // TAC|Pay: Redirect-URL für den Gast
+  message?: string;
+}
+
+/** Zahlungsstatus (für GET /api/checkout/:paymentId). */
+export interface PaymentStatus {
+  paymentId: string;
+  status: 'pending' | 'confirmed' | 'failed';
+  bookingId?: string;
+  message?: string;
+}

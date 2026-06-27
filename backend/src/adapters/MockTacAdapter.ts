@@ -31,8 +31,14 @@ const SUITES: Suite[] = [
   { id: 'orient', name: 'Orient Suite' },
 ];
 
-// Preis pro Stunde und Person in Cent (98 € / 2 Std / 2 Pers ≈ Basis).
-const PRICE_PER_HOUR_CENTS = 4900;
+// Preistabelle in Cent – NICHT linear (6 Std = 288 €, nicht 294 €). Quelle: CLAUDE.md.
+const PRICE_CENTS: Record<number, number> = {
+  2: 9800,   // 98 €
+  3: 14700,  // 147 €
+  4: 19600,  // 196 €
+  5: 24500,  // 245 €
+  6: 28800,  // 288 €
+};
 
 const EXTRAS: Extra[] = [
   { id: 'bademantel_person', name: 'Bademantel & Saunahandtuch pro Person', priceCents: 1500 },
@@ -40,9 +46,6 @@ const EXTRAS: Extra[] = [
   { id: 'romantik', name: 'Romantikpacket', description: 'Kerzen & Rosenblätter, 0,7 alkoholfreier Sekt, wahlw. Prosecco oder Wein', priceCents: 3900, maxQty: 1 },
 ];
 
-function priceFor(filter: BookingFilter): number {
-  return PRICE_PER_HOUR_CENTS * filter.durationHours;
-}
 
 /** Deterministischer Pseudo-Zufall, damit dieselbe Anfrage stabil dieselbe Belegung liefert. */
 function seededStatus(date: string, filter: BookingFilter): DayAvailability['status'] {
@@ -87,7 +90,7 @@ export class MockTacAdapter implements TacAdapter {
       result.push({
         date,
         status,
-        fromPrice: status === 'available' ? priceFor(filter) : undefined,
+        fromPrice: status === 'available' ? PRICE_CENTS[filter.durationHours] ?? 0 : undefined,
       });
     }
     return result;
@@ -116,7 +119,7 @@ export class MockTacAdapter implements TacAdapter {
         endTime,
         suiteId: suite.id,
         suiteName: suite.name,
-        priceCents: priceFor(filter),
+        priceCents: PRICE_CENTS[filter.durationHours] ?? 0,
         available: true,
       });
     }

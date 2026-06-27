@@ -47,11 +47,11 @@ const EXTRAS: Extra[] = [
   { id: 'romantik', name: 'Romantikpacket', description: 'Kerzen & Rosenblätter, 0,7 alkoholfreier Sekt, wahlw. Prosecco oder Wein', priceCents: 3900, maxQty: 1 },
 ];
 
-const PRICE_PER_HOUR_CENTS = 4900;
-
-function priceFor(filter: BookingFilter) {
-  return PRICE_PER_HOUR_CENTS * filter.durationHours;
-}
+// Preistabelle in Cent – nicht linear. Quelle: CLAUDE.md / TAC-Katalog Dortmund.
+const PRICE_CENTS: Record<number, number> = {
+  2: 9800, 3: 14700, 4: 19600, 5: 24500, 6: 28800,
+};
+function priceFor(filter: BookingFilter) { return PRICE_CENTS[filter.durationHours] ?? 0; }
 
 function seededStatus(date: string, filter: BookingFilter): DayAvailability['status'] {
   const today = new Date();
@@ -161,6 +161,30 @@ app.post('/api/bookings', async (req, res, next) => {
     };
     res.status(201).json(result);
   } catch (e) { next(e); }
+});
+
+// POST /api/checkout – Bezahlvorgang starten (onsite: direkt buchen)
+app.post('/api/checkout', async (req, res, next) => {
+  try {
+    const booking: BookingRequest = req.body.booking ?? req.body;
+    const bookingId = 'MOCK-' + Math.random().toString(36).slice(2, 8).toUpperCase();
+    res.status(201).json({
+      status: 'confirmed',
+      paymentId: 'ONSITE-' + Date.now(),
+      bookingId,
+      message: `Buchung für ${booking.customer.firstName} ${booking.customer.lastName} angelegt. Zahlung vor Ort.`,
+    });
+  } catch (e) { next(e); }
+});
+
+// GET /api/checkout/:paymentId – Zahlungsstatus
+app.get('/api/checkout/:paymentId', (req, res) => {
+  res.json({ paymentId: req.params.paymentId, status: 'confirmed' });
+});
+
+// POST /api/payment/webhook – TAC|Pay (Stub)
+app.post('/api/payment/webhook', (_req, res) => {
+  res.json({ received: true });
 });
 
 app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
