@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.env
+*.log
+
+# macOS
+.DS_Store
+._*
+._.DS_Store
+
+# Lizenzpflichtige Assets – lokal ablegen, nicht einchecken
+frontend/public/fonts/
+frontend/public/hero.jpg
+frontend/public/logo.svg

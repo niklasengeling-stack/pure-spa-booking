@@ -1,0 +1,138 @@
+import type {
+  Location,
+  Suite,
+  BookingFilter,
+  DayAvailability,
+  DaySlots,
+  Slot,
+  BookingRequest,
+  BookingResult,
+  Extra,
+} from '../../../shared/types';
+import type { TacAdapter } from './TacAdapter';
+
+/**
+ * MockTacAdapter – realistische Dummy-Daten, die das Verhalten von TAC nachahmen.
+ *
+ * Damit ist das gesamte Tool sofort entwickel- und testbar, OHNE TAC-Zugang.
+ * Die Zahlen orientieren sich am echten PureSpa-Webshop:
+ *   2 Std ab 98 € · 3 Std ab 147 € · 4 Std ab 196 € · 5 Std ab 245 € · 6 Std ab 288 €
+ */
+
+const LOCATIONS: Location[] = [
+  { id: 'dortmund', name: 'Dortmund' },
+  { id: 'oberhausen', name: 'Oberhausen' },
+];
+
+const SUITES: Suite[] = [
+  { id: 'marrakesch', name: 'Marrakesch Suite' },
+  { id: 'bali', name: 'Bali Suite' },
+  { id: 'finnland', name: 'Finnland Suite' },
+  { id: 'orient', name: 'Orient Suite' },
+];
+
+// Preis pro Stunde und Person in Cent (98 € / 2 Std / 2 Pers ≈ Basis).
+const PRICE_PER_HOUR_CENTS = 4900;
+
+const EXTRAS: Extra[] = [
+  { id: 'bademantel_person', name: 'Bademantel & Saunahandtuch pro Person', priceCents: 1500 },
+  { id: 'birthday', name: 'Birthdaypacket', description: 'Dekoration & Ballons, 0,7 alkoholfreier Sekt, wahlweise Prosecco oder Wein', priceCents: 3900, maxQty: 1 },
+  { id: 'romantik', name: 'Romantikpacket', description: 'Kerzen & Rosenblätter, 0,7 alkoholfreier Sekt, wahlw. Prosecco oder Wein', priceCents: 3900, maxQty: 1 },
+];
+
+function priceFor(filter: BookingFilter): number {
+  return PRICE_PER_HOUR_CENTS * filter.durationHours;
+}
+
+/** Deterministischer Pseudo-Zufall, damit dieselbe Anfrage stabil dieselbe Belegung liefert. */
+function seededStatus(date: string, filter: BookingFilter): DayAvailability['status'] {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const d = new Date(date + 'T00:00:00');
+
+  if (d < today) return 'closed';               // Vergangenheit
+  const daysAhead = Math.round((d.getTime() - today.getTime()) / 86_400_000);
+  if (daysAhead > 90) return 'closed';          // Buchungsfenster: 90 Tage
+
+  // Pseudo-Zufall aus Datum + Filter erzeugen.
+  let hash = 0;
+  const key = date + filter.locationId + filter.guests + filter.durationHours + (filter.suiteId ?? 'all');
+  for (let i = 0; i < key.length; i++) hash = (hash * 31 + key.charCodeAt(i)) >>> 0;
+
+  // ~35 % ausgebucht, Rest verfügbar. Montag/Dienstag öfter zu.
+  const weekday = d.getDay(); // 0 So … 6 Sa
+  const soldoutChance = weekday === 1 || weekday === 2 ? 0.55 : 0.3;
+  return (hash % 100) / 100 < soldoutChance ? 'soldout' : 'available';
+}
+
+export class MockTacAdapter implements TacAdapter {
+  async getLocations(): Promise<Location[]> {
+    return LOCATIONS;
+  }
+
+  async getSuites(_locationId: string): Promise<Suite[]> {
+    return SUITES;
+  }
+
+  async getMonthAvailability(
+    filter: BookingFilter,
+    year: number,
+    month: number,
+  ): Promise<DayAvailability[]> {
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const result: DayAvailability[] = [];
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const status = seededStatus(date, filter);
+      result.push({
+        date,
+        status,
+        fromPrice: status === 'available' ? priceFor(filter) : undefined,
+      });
+    }
+    return result;
+  }
+
+  async getDaySlots(filter: BookingFilter, date: string): Promise<DaySlots> {
+    const status = seededStatus(date, filter);
+    if (status !== 'available') {
+      return { date, locationId: filter.locationId, slots: [] };
+    }
+
+    // Startzeiten in 10-Minuten-Rastern, in Blöcken – wie im echten Shop (9:00, 9:10 …).
+    const startTimes = ['09:00', '09:10', '09:20', '09:30', '11:20', '11:30', '11:40', '11:50', '12:00', '16:40', '16:50', '17:50'];
+    const suitesToOffer = filter.suiteId ? SUITES.filter((s) => s.id === filter.suiteId) : SUITES;
+
+    const slots: Slot[] = [];
+    for (const start of startTimes) {
+      // pro Startzeit eine Suite anbieten (rotierend), nicht jede Kombination – realistischer.
+      const suite = suitesToOffer[slots.length % suitesToOffer.length];
+      const [h, m] = start.split(':').map(Number);
+      const endMinutes = h * 60 + m + filter.durationHours * 60;
+      const endTime = `${String(Math.floor(endMinutes / 60) % 24).padStart(2, '0')}:${String(endMinutes % 60).padStart(2, '0')}`;
+      slots.push({
+        id: `${date}_${start}_${suite.id}`,
+        startTime: start,
+        endTime,
+        suiteId: suite.id,
+        suiteName: suite.name,
+        priceCents: priceFor(filter),
+        available: true,
+      });
+    }
+    return { date, locationId: filter.locationId, slots };
+  }
+
+  async getExtras(_locationId: string): Promise<Extra[]> {
+    return EXTRAS;
+  }
+
+  async createBooking(request: BookingRequest): Promise<BookingResult> {
+    // Mock: bestätigt immer. Der echte Adapter schreibt nach TAC zurück.
+    return {
+      status: 'confirmed',
+      bookingId: 'MOCK-' + Math.random().toString(36).slice(2, 8).toUpperCase(),
+      message: `Buchung für ${request.customer.firstName} ${request.customer.lastName} angelegt (Mock).`,
+    };
+  }
+}
