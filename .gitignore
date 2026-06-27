@@ -8,7 +8,5 @@ dist/
 ._*
 ._.DS_Store
 
-# Lizenzpflichtige Assets – lokal ablegen, nicht einchecken
+# Fonts – lokal ablegen (kommerzielle Lizenz, Adobe Fonts CDN in Produktion)
 frontend/public/fonts/
-frontend/public/hero.jpg
-frontend/public/logo.svg
