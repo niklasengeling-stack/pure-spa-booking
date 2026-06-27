@@ -77,10 +77,11 @@ frontend/src/{App.tsx, api.ts, main.tsx}
 Kalender-Status pro Tag: `available` (blau, klickbar) · `soldout` (ausgebucht) ·
 `closed` (Vergangenheit/geschlossen).
 
-## TAC-Katalog-Mapping (aus dem Live-Shop, Standort Dortmund)
+## TAC-Katalog-Mapping (aus den Live-Shops)
 
 Eine Buchung ist in TAC über **Kategorie (Personen) × Template (Dauer)** definiert.
-Diese realen IDs nutzt der `MockTacAdapter` bereits.
+
+### Dortmund
 
 | Gäste | TAC categoryId |   | Dauer | TAC templateId | Preis  |
 |------:|:--------------:|---|------:|:--------------:|:------:|
@@ -90,8 +91,18 @@ Diese realen IDs nutzt der `MockTacAdapter` bereits.
 |       |                |   | 5 Std | 492            | 245 €  |
 |       |                |   | 6 Std | 493            | 288 €  |
 
+### Oberhausen (shop.pure-spa.de)
+
+| Gäste | TAC categoryId |   | Dauer | TAC templateId | Preis  |
+|------:|:--------------:|---|------:|:--------------:|:------:|
+| 2 P   | 187            |   | 2 Std | 189            | 98 €   |
+| 3 P   | 188            |   | 3 Std | 190            | 147 €  |
+| 4 P   | 348            |   | 4 Std | 191            | 196 €  |
+|       |                |   | 5 Std | 192            | 245 €  |
+|       |                |   | 6 Std | 193            | 288 €  |
+
 - Preise sind **nicht linear** (6 Std = 288 €, nicht 294 €) → als Tabelle pflegen.
-- IDs gelten für **Dortmund**. **Oberhausen** ist ein eigener Shop mit eigenen IDs (TBD).
+- Preise sind für beide Standorte identisch.
 - Der aktuelle TAC-Shop kennt **keinen Suiten-Filter** (nur Personen × Dauer).
   Der „Suite"-Filter im neuen Design ist neu → muss in TAC auf etwas abgebildet
   werden (z. B. Räume/Ressourcen). Mit TAC klären.

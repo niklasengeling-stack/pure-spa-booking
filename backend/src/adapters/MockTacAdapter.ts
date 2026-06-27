@@ -24,6 +24,22 @@ const LOCATIONS: Location[] = [
   { id: 'oberhausen', name: 'Oberhausen' },
 ];
 
+/**
+ * TAC-Katalog-IDs je Standort (aus den Live-Shops, für RealTacAdapter).
+ * categoryId = Personen, templateId = Dauer.
+ *
+ * Dortmund:   2P→480  3P→481  4P→482 | 2h→489  3h→490  4h→491  5h→492  6h→493
+ * Oberhausen: 2P→187  3P→188  4P→348 | 2h→189  3h→190  4h→191  5h→192  6h→193
+ */
+export const TAC_CATEGORY_IDS: Record<string, Record<number, number>> = {
+  dortmund:   { 2: 480, 3: 481, 4: 482 },
+  oberhausen: { 2: 187, 3: 188, 4: 348 },
+};
+export const TAC_TEMPLATE_IDS: Record<string, Record<number, number>> = {
+  dortmund:   { 2: 489, 3: 490, 4: 491, 5: 492, 6: 493 },
+  oberhausen: { 2: 189, 3: 190, 4: 191, 5: 192, 6: 193 },
+};
+
 const SUITES: Suite[] = [
   { id: 'marrakesch', name: 'Marrakesch Suite' },
   { id: 'bali', name: 'Bali Suite' },
