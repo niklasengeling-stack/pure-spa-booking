@@ -1,6 +1,9 @@
 {
-  "name": "purespa-booking-api",
+  "name": "purespa-booking",
   "private": true,
+  "scripts": {
+    "build": "npm --prefix frontend install && npm --prefix frontend run build"
+  },
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^4.19.2"
